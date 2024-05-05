@@ -1,27 +1,10 @@
+#include "config.hpp"
 #include "MarantzRc5Control.hpp"
 #include <PubSubClient.h>
 #include <ESP8266WiFi.h>
 
-// #define ENABLE_TEST_BROKER
-
 #define IR_TX_PIN 5 // pin to use for tx
 #define DELAY_TIME 1500
-
-#define RC5_NUMER_OF_VALUES 3
-#define RC5X_NUMER_OF_VALUES 4
-
-const char* ssid = "<ssid>";
-const char* password = "<pass>";
-
-#ifdef ENABLE_TEST_BROKER
-//Broker without auth
-const char* mqtt_server = "10.1.x.x";
-#else
-//Broker with auth
-const char* mqtt_server = "10.1.x.x";
-const char* broker_username = "username";
-const char* broker_password = "password";
-#endif
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -58,7 +41,7 @@ void setup_wifi()
     Serial.println(WiFi.localIP());
 }
 
-void GetValuesFromCommaSeperatedString(char* payload, uint8_t length, uint8_t* out, uint8_t outLength)
+void GetValuesFromCommaSeperatedString(char* payload, uint8_t length, uint8_t* out)
 {
     char payloadBuffer[length];
 
@@ -68,7 +51,6 @@ void GetValuesFromCommaSeperatedString(char* payload, uint8_t length, uint8_t* o
     }
     
     String input = String(payloadBuffer);
-    uint8_t numbers[outLength];
     char *token;
     int index = 0;
 
@@ -78,11 +60,9 @@ void GetValuesFromCommaSeperatedString(char* payload, uint8_t length, uint8_t* o
     // Extract tokens from the input string
     token = strtok(charArray, ",");
     while (token != NULL) {
-        numbers[index++] = atoi(token);
+        out[index++] = atoi(token);
         token = strtok(NULL, ",");
     }
-
-    out = &numbers[0];
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -130,8 +110,8 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
         Serial.println("Passing through RC5");
 
-        uint8_t outBuffer[RC5_NUMER_OF_VALUES];
-        GetValuesFromCommaSeperatedString((char*)payload, length, outBuffer, RC5_NUMER_OF_VALUES);
+        uint8_t outBuffer[50];
+        GetValuesFromCommaSeperatedString((char*)payload, length, &outBuffer[0]);
 
         Serial.println(outBuffer[0]);
         Serial.println(outBuffer[1]);
@@ -143,8 +123,8 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
         Serial.println("Passing through RC5X");
 
-        uint8_t outBuffer[RC5X_NUMER_OF_VALUES];
-        GetValuesFromCommaSeperatedString((char*)payload, length, outBuffer, RC5X_NUMER_OF_VALUES);
+        uint8_t outBuffer[50];
+        GetValuesFromCommaSeperatedString((char*)payload, length, outBuffer);
 
         Serial.println(outBuffer[0]);
         Serial.println(outBuffer[1]);
